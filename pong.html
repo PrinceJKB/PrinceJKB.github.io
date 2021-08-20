@@ -33,8 +33,8 @@
         height: 100,
 
         update: function() {
-          if (keystate[UpArrow]) this.y -= 7;
-          if (keystate[DownArrow]) this.y += 7;
+          if (keystate[KEY_UP]) this.y -= 5;
+          if (keystate[KEY_DOWN]) this.y += 5;
 
         },
         draw: function() {
@@ -46,7 +46,10 @@
         y: null,
         width: 20,
         height: 100,
-        update: function() {},
+        update: function() {
+          var desty = ball.y - (this.height - ball.side)*0.5;
+          this.y += (desty - this.y)*0.06;
+        },
         draw: function() {
           ctx.fillRect(this.x, this.y, this.width, this.height);
         }
@@ -56,12 +59,45 @@
         y: null,
         vel: null,
         side: 20,
-        speed: 5,
+        speed: 4,
 
 
         update: function() {
           this.x += this.vel.x;
           this.y += this.vel.y;
+
+          if (0 > this.y || this.y+this.side > HEIGHT){
+            var offset = this.vel.y < 0 ? 0 - this.y : HEIGHT - (this.y+this.side);
+            this.y += 2*offset;
+            this.vel.y *= -1;
+          }
+
+          var AABBIntersect = function(ax, ay, aw, ah, bx, by, bw, bh) {
+            return ax < bx+bw && ay < by+bh && bx < ax+aw && by < ay+ah;
+          };
+
+          var pdle = this.vel.x < 0 ? player : ai;
+          if (AABBIntersect(pdle.x, pdle.y, pdle.width, pdle.height, 
+          this.x, this.y, this.side, this.side)){
+            this.x = pdle===player ? player.x+player.width : ai.x - this.side;
+            var n = (this.y+this.side - pdle.y)/(pdle.height+this.side);
+            var phi = 0.25*pi*(2*n-1); //pi/4 = 45 degrees
+
+            var smash = Math.abs(phi) > 0.2*pi ? 1.5 : 1;
+            this.vel.x = smash*(pdle===player ? 1 : -1)*this.speed*Math.cos(phi);
+            this.vel.y = smash*this.speed*Math.sin(phi);
+          }
+
+          if (0 > this.x+this.side || this.x > WIDTH){
+            
+            ball.x = (WIDTH - ball.side)/2;
+            ball.y = (HEIGHT - ball.side)/2;
+
+            ball.vel = {
+              x: (pdle===player ? 1 : -1)*ball.speed,
+              y: 0
+            }
+          }
         },
         draw: function() {
           ctx.fillRect(this.x, this.y, this.side, this.side);
@@ -104,8 +140,9 @@
         ball.y = (HEIGHT - ball.side)/2;
 
         ball.vel = {
-          x: 0,
-          y: vall.speed}
+          x: ball.speed,
+          y: 0
+        }
       }
 
       function update() {
