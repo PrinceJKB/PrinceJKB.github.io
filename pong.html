@@ -35,7 +35,7 @@
         update: function() {
           if (keystate[KEY_UP]) this.y -= 5;
           if (keystate[KEY_DOWN]) this.y += 5;
-
+          this.y = Math.max(Math.min(this.y, HEIGHT - this.height), 0);
         },
         draw: function() {
           ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -49,6 +49,7 @@
         update: function() {
           var desty = ball.y - (this.height - ball.side)*0.5;
           this.y += (desty - this.y)*0.06;
+          this.y = Math.max(Math.min(this.y, HEIGHT - this.height), 0);
         },
         draw: function() {
           ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -61,10 +62,21 @@
         side: 20,
         speed: 4,
 
+        serve: function(side) {
+          var r = Math.random();
+          this.x = side===1 ? player.x+player.width : ai.x - this.side;
+          this.y = (HEIGHT - this.side)*r;
 
+          var phi = 0.1*pi*(1-2*r);
+          this.vel = {
+            x: side*this.speed*Math.cos(phi),
+            y: this.speed*Math.sin(phi)
+          };
+        },
         update: function() {
           this.x += this.vel.x;
           this.y += this.vel.y;
+          
 
           if (0 > this.y || this.y+this.side > HEIGHT){
             var offset = this.vel.y < 0 ? 0 - this.y : HEIGHT - (this.y+this.side);
@@ -89,14 +101,7 @@
           }
 
           if (0 > this.x+this.side || this.x > WIDTH){
-            
-            ball.x = (WIDTH - ball.side)/2;
-            ball.y = (HEIGHT - ball.side)/2;
-
-            ball.vel = {
-              x: (pdle===player ? 1 : -1)*ball.speed,
-              y: 0
-            }
+            this.serve(pdle===player ? 1 : -1);
           }
         },
         draw: function() {
@@ -136,13 +141,7 @@
         ai.x = WIDTH - (player.width + ai.width);
         ai.y = (HEIGHT - ai.height)/2;
 
-        ball.x = (WIDTH - ball.side)/2;
-        ball.y = (HEIGHT - ball.side)/2;
-
-        ball.vel = {
-          x: ball.speed,
-          y: 0
-        }
+        ball.serve(1);
       }
 
       function update() {
